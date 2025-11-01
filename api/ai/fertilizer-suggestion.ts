@@ -5,9 +5,17 @@ export const config = {
 };
 
 // IMPORTANT: Set the API_KEY in your Vercel project settings
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY as string});
+const apiKey = process.env.API_KEY;
+const ai = apiKey ? new GoogleGenAI({apiKey}) : null;
 
 export default async function handler(req: Request) {
+  if (!ai) {
+    return new Response(JSON.stringify({ error: 'The AI provider is not configured. Please set the API_KEY environment variable in your Vercel project settings.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'POST') {
     try {
         const { name, scientificName } = await req.json();
