@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import StatsBanner from './components/StatsBanner';
@@ -16,7 +16,15 @@ import Dashboard from './components/Dashboard';
 const App: React.FC = () => {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for a token in localStorage on initial load
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      setAuthToken(storedToken);
+    }
+  }, []);
 
   const openAuthModal = (mode: 'signin' | 'signup') => {
     setAuthModalMode(mode);
@@ -24,25 +32,24 @@ const App: React.FC = () => {
   };
   const closeAuthModal = () => setAuthModalOpen(false);
 
-  // In a real app, this would receive a user/token from the backend
-  const handleLoginSuccess = () => {
-    // e.g., localStorage.setItem('userToken', token);
-    setIsLoggedIn(true);
+  const handleLoginSuccess = (token: string) => {
+    localStorage.setItem('authToken', token);
+    setAuthToken(token);
     closeAuthModal();
   };
 
   const handleLogout = () => {
-    // e.g., localStorage.removeItem('userToken');
-    setIsLoggedIn(false);
+    localStorage.removeItem('authToken');
+    setAuthToken(null);
   };
 
-  if (isLoggedIn) {
-    return <Dashboard onLogout={handleLogout} />;
+  if (authToken) {
+    return <Dashboard onLogout={handleLogout} token={authToken} />;
   }
 
   return (
     <div className="bg-green-50 text-plant-dark">
-      <Header onAuthClick={openAuthModal} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <Header onAuthClick={openAuthModal} isLoggedIn={!!authToken} onLogout={handleLogout} />
       <main>
         <Hero onSignUpClick={() => openAuthModal('signup')} />
         <StatsBanner />

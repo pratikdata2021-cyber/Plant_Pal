@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AiIcon, CameraIcon, ChatBubbleIcon, ExclamationCircleIcon, WaterDropIcon, SunIcon, FertilizerIcon, SendIcon, UploadIcon, CloseIcon } from '../constants';
+import { askAiChat, identifyPlant } from '../lib/api';
 
 interface ChatMessage {
     role: 'user' | 'model';
@@ -11,8 +12,12 @@ interface IdentificationResult {
     match: number;
 }
 
-const AiAssistant: React.FC = () => {
-    const [activeSubTab, setActiveSubTab] = useState<'chat' | 'identify'>('identify');
+interface AiAssistantProps {
+    token: string;
+}
+
+const AiAssistant: React.FC<AiAssistantProps> = ({ token }) => {
+    const [activeSubTab, setActiveSubTab] = useState<'chat' | 'identify'>('chat');
     // Chat State
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
         { role: 'model', text: 'Hello! How can I help you with your plants today? Ask me anything or choose from a common question below.' }
@@ -40,20 +45,13 @@ const AiAssistant: React.FC = () => {
         const question = messageText || currentQuestion;
         if (!question.trim() || isChatLoading) return;
 
-        setChatHistory(prev => [...prev, { role: 'user', text: question }]);
+        const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: question }];
+        setChatHistory(newHistory);
         if (!messageText) setCurrentQuestion('');
         setIsChatLoading(true);
 
         try {
-            const res = await fetch('/api/ai/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: question, history: chatHistory }),
-            });
-
-            if (!res.ok) throw new Error('Failed to get response from AI assistant.');
-
-            const { response } = await res.json();
+            const { response } = await askAiChat(question, newHistory, token);
             setChatHistory(prev => [...prev, { role: 'model', text: response }]);
         } catch (error) {
             console.error("Error calling backend chat API:", error);
@@ -83,17 +81,7 @@ const AiAssistant: React.FC = () => {
         setIdentificationError(null);
         
         try {
-            const formData = new FormData();
-            formData.append('image', imageFile);
-
-            const res = await fetch('/api/ai/identify', {
-                method: 'POST',
-                body: formData,
-            });
-    
-            if (!res.ok) throw new Error("Server couldn't identify the plant.");
-    
-            const result = await res.json() as IdentificationResult;
+            const result = await identifyPlant(imageFile, token);
             setIdentificationResult(result);
 
         } catch (error) {
@@ -108,6 +96,7 @@ const AiAssistant: React.FC = () => {
         if (imageFile) {
             handleIdentifyPlant();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [imageFile]);
 
 

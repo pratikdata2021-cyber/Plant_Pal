@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CloseIcon, TrialSparkleIcon, LocationIcon, UploadIcon, AiIcon } from '../constants';
+import { autoFillPlantDetails } from '../lib/api';
 
 interface AddPlantModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddPlant: (plantData: any) => void;
+  onAddPlant: (plantData: FormData) => void;
+  token: string;
 }
 
-const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPlant }) => {
+const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPlant, token }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [plantPhoto, setPlantPhoto] = useState<string | null>(null);
@@ -67,7 +69,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setPlantData(prev => ({...prev, [name]: value}));
+    setPlantData(prev => ({...prev, [name]: name.endsWith('Frequency') ? parseInt(value, 10) : value }));
   };
 
   const handleFileSelect = (file: File) => {
@@ -109,19 +111,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
     setIsAutoFilling(true);
     setAutoFillError(null);
     try {
-        const formData = new FormData();
-        formData.append('image', plantFile);
-
-        const res = await fetch('/api/ai/autofill', {
-            method: 'POST',
-            body: formData, // Sending as multipart/form-data
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to get AI suggestions.');
-        }
-
-        const aiData = await res.json();
+        const aiData = await autoFillPlantDetails(plantFile, token);
         
         setPlantData(prev => ({
             ...prev,
@@ -145,7 +135,15 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddPlant({ ...plantData, photo: plantFile });
+    const formData = new FormData();
+    Object.entries(plantData).forEach(([key, value]) => {
+        formData.append(key, String(value));
+    });
+    if (plantFile) {
+        formData.append('photo', plantFile);
+    }
+
+    onAddPlant(formData);
   };
 
   const inputClasses = "w-full px-4 py-2 bg-plant-gray-light border border-gray-200 rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition";

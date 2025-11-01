@@ -2,9 +2,11 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { AiIcon, CalendarIcon, CameraIcon, ChartIcon, CheckCircleIcon, CloseIcon, ExclamationCircleIcon, JournalIcon, LeafIcon, LocationIcon, LogoIcon, PlusIcon, SunIcon, TrashIcon, WaterDropIcon, FertilizerIcon, GroomIcon, UploadIcon } from '../constants';
 import AddPlantModal from './AddPlantModal';
 import AiAssistant from './AiAssistant';
+import { getPlants, addPlant, deletePlant, updatePlant, updatePlantActivity, getJournalEntries, addJournalEntry, deleteJournalEntry, getArticles, getFertilizerSuggestion } from '../lib/api';
 
 interface DashboardProps {
     onLogout: () => void;
+    token: string;
 }
 
 const addDays = (date: string, days: number): Date => {
@@ -22,7 +24,7 @@ const formatDate = (date: Date | string): string => {
 };
 
 // --- TYPE DEFINITIONS ---
-interface Plant {
+export interface Plant {
     id: number | string;
     name: string;
     scientificName: string;
@@ -42,7 +44,7 @@ interface Plant {
     fertilizerDetails?: string;
 }
 
-interface Article {
+export interface Article {
   id: number;
   title: string;
   category: string;
@@ -53,7 +55,7 @@ interface Article {
   content: string;
 }
 
-interface JournalEntry {
+export interface JournalEntry {
     id: number | string;
     title: string;
     content: string;
@@ -265,7 +267,7 @@ const DetailItem: React.FC<{icon: React.ReactNode, label: string, value: string}
     </div>
 );
 
-const PlantDetailsModal: React.FC<{ plant: Plant | null; isOpen: boolean; onClose: () => void; onUpdatePlant: (plant: Plant) => void; }> = ({ plant, isOpen, onClose, onUpdatePlant }) => {
+const PlantDetailsModal: React.FC<{ plant: Plant | null; isOpen: boolean; onClose: () => void; onUpdatePlant: (plant: Plant) => void; token: string; }> = ({ plant, isOpen, onClose, onUpdatePlant, token }) => {
     const [editablePlant, setEditablePlant] = useState<Plant | null>(plant);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiFertilizerNote, setAiFertilizerNote] = useState('');
@@ -287,16 +289,10 @@ const PlantDetailsModal: React.FC<{ plant: Plant | null; isOpen: boolean; onClos
         setIsAiLoading(true);
         setAiFertilizerNote('');
         try {
-          const res = await fetch('/api/ai/fertilizer-suggestion', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  name: editablePlant.name,
-                  scientificName: editablePlant.scientificName,
-              }),
-          });
-          if (!res.ok) throw new Error('Failed to fetch AI suggestion.');
-          const { suggestion } = await res.json();
+          const { suggestion } = await getFertilizerSuggestion({
+              name: editablePlant.name,
+              scientificName: editablePlant.scientificName,
+          }, token);
           setAiFertilizerNote(suggestion);
 
         } catch (error) {
@@ -308,8 +304,6 @@ const PlantDetailsModal: React.FC<{ plant: Plant | null; isOpen: boolean; onClos
     };
 
     const handleSaveChanges = async () => {
-        // In a real app, this would be an API call
-        // await fetch(`/api/plants/${editablePlant.id}`, { method: 'PUT', ... });
         onUpdatePlant(editablePlant);
         onClose();
     };
@@ -403,7 +397,7 @@ const PlantDetailsModal: React.FC<{ plant: Plant | null; isOpen: boolean; onClos
 
 // --- Journal Components ---
 
-const JournalEntryModal: React.FC<{ isOpen: boolean, onClose: () => void, onSave: (entry: Omit<JournalEntry, 'id' | 'date'>) => void }> = ({ isOpen, onClose, onSave }) => {
+const JournalEntryModal: React.FC<{ isOpen: boolean, onClose: () => void, onSave: (entry: FormData) => void }> = ({ isOpen, onClose, onSave }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -421,16 +415,15 @@ const JournalEntryModal: React.FC<{ isOpen: boolean, onClose: () => void, onSave
 
     const handleSave = () => {
         if (!title.trim()) return;
-        let fileData;
+        
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
         if (file) {
-            fileData = {
-                name: file.name,
-                type: file.type.startsWith('image/') ? 'image' : 'pdf',
-                url: URL.createObjectURL(file) // This is temporary for display
-            };
+            formData.append('file', file);
         }
-        // In a real app, you'd upload the file and pass form data
-        onSave({ title, content, file: fileData });
+
+        onSave(formData);
         onClose();
     };
 
@@ -772,7 +765,7 @@ const DashboardSkeleton: React.FC = () => (
     </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, token }) => {
     const [activeTab, setActiveTab] = useState('My Plants');
     const [isAddPlantModalOpen, setAddPlantModalOpen] = useState(false);
     const [plants, setPlants] = useState<Plant[]>([]);
@@ -798,48 +791,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const [isJournalModalOpen, setJournalModalOpen] = useState(false);
     const [viewingJournalEntry, setViewingJournalEntry] = useState<JournalEntry | null>(null);
     
-    // Fetch initial data from backend
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                // In a real app, you would fetch from your actual backend endpoints
-                // and include authentication headers.
-                const plantsRes = await fetch('/api/plants');
-                const journalRes = await fetch('/api/journal');
-                const articlesRes = await fetch('/api/articles');
-
-                if (!plantsRes.ok || !journalRes.ok || !articlesRes.ok) {
-                    throw new Error('Failed to fetch data from the server.');
-                }
-
-                // Using mock data for now
-                const plantsData: Plant[] = [{ id: 1, name: 'Monstera', scientificName: 'Monstera deliciosa', image: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?q=80&w=800', light: 'Bright', health: 'healthy', location: 'Living Room', wateringFrequency: 7, lastWatered: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), fertilizingFrequency: 30, lastFertilized: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), groomingFrequency: 60, lastGroomed: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), sunlight: 'Bright Light', humidity: 'Medium Humidity', notes: 'Loves to climb. Mist leaves occasionally.', fertilizerDetails: 'Balanced liquid fertilizer (20-20-20) every 4 weeks during growing season.' }];
-                const journalData: JournalEntry[] = [];
-                const articlesData: Article[] = [{ id: 1, title: "The Ultimate Guide to Watering Your Houseplants", category: "Watering", type: "Guide", description: "Learn the dos and don'ts of watering...", image: "https://images.unsplash.com/photo-1587213602148-8a8b1055f7b7?q=80&w=800", link: "#", content: "Understanding the watering needs..." }];
-                
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate loading
+                const [plantsData, journalData, articlesData] = await Promise.all([
+                    getPlants(token),
+                    getJournalEntries(token),
+                    getArticles(token),
+                ]);
                 
                 setPlants(plantsData);
                 setJournalEntries(journalData);
                 setArticles(articlesData);
 
             } catch (err: any) {
-                setError(err.message);
-                // For prototype, load mock data even if API fails
-                const plantsData: Plant[] = [{ id: 1, name: 'Monstera', scientificName: 'Monstera deliciosa', image: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?q=80&w=800', light: 'Bright', health: 'healthy', location: 'Living Room', wateringFrequency: 7, lastWatered: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), fertilizingFrequency: 30, lastFertilized: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), groomingFrequency: 60, lastGroomed: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), sunlight: 'Bright Light', humidity: 'Medium Humidity', notes: 'Loves to climb. Mist leaves occasionally.', fertilizerDetails: 'Balanced liquid fertilizer (20-20-20) every 4 weeks during growing season.' }];
-                const journalData: JournalEntry[] = [];
-                const articlesData: Article[] = [{ id: 1, title: "The Ultimate Guide to Watering Your Houseplants", category: "Watering", type: "Guide", description: "Learn the dos and don'ts of watering...", image: "https://images.unsplash.com/photo-1587213602148-8a8b1055f7b7?q=80&w=800", link: "#", content: "Understanding the watering needs..." }];
-                setPlants(plantsData);
-                setJournalEntries(journalData);
-                setArticles(articlesData);
+                setError(err.message || 'Failed to fetch data from the server.');
             } finally {
                 setIsLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [token]);
 
     const openAddPlantModal = () => setAddPlantModalOpen(true);
     const closeAddPlantModal = () => setAddPlantModalOpen(false);
@@ -855,36 +829,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     };
 
     const handleDeletePlant = async (idToDelete: Plant['id']) => {
-        // Optimistic update
         const originalPlants = plants;
         setPlants(currentPlants => currentPlants.filter(p => p.id !== idToDelete));
         try {
-            // await fetch(`/api/plants/${idToDelete}`, { method: 'DELETE' });
+            await deletePlant(idToDelete, token);
         } catch (error) {
             console.error('Failed to delete plant:', error);
-            setPlants(originalPlants); // Revert on failure
+            setPlants(originalPlants);
         }
     };
     
     const handleUpdatePlantActivity = async (plantId: Plant['id'], activity: 'water' | 'fertilize' | 'groom') => {
         const originalPlants = plants;
         const today = new Date().toISOString();
+        const activityKey = `last${activity.charAt(0).toUpperCase() + activity.slice(1)}ed` as keyof Plant;
         setPlants(currentPlants =>
-            currentPlants.map(p => p.id === plantId ? { ...p, [`last${activity.charAt(0).toUpperCase() + activity.slice(1)}d`]: today } : p)
+            currentPlants.map(p => p.id === plantId ? { ...p, [activityKey]: today } : p)
         );
         try {
-            // await fetch(`/api/plants/${plantId}/activity`, { method: 'POST', body: JSON.stringify({ activity }) });
+            const updatedPlant = await updatePlantActivity(plantId, activity, token);
+            setPlants(currentPlants => currentPlants.map(p => p.id === plantId ? updatedPlant : p));
         } catch (error) {
             console.error('Failed to update activity:', error);
-            setPlants(originalPlants); // Revert on failure
+            setPlants(originalPlants);
         }
     };
 
-    const handleAddPlant = async (plantData: any) => {
+    const handleAddPlant = async (plantFormData: FormData) => {
         try {
-            // const response = await fetch('/api/plants', { method: 'POST', body: JSON.stringify(plantData) });
-            // const newPlant = await response.json();
-            const newPlant = { ...plantData, id: Date.now(), image: plantData.photo ? URL.createObjectURL(plantData.photo) : '', health: 'healthy' }; // Mock response
+            const newPlant = await addPlant(plantFormData, token);
             setPlants(prevPlants => [newPlant, ...prevPlants]);
             closeAddPlantModal();
         } catch (error) {
@@ -892,25 +865,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         }
     };
 
-    const handleUpdatePlant = async (updatedPlant: Plant) => {
+    const handleUpdatePlant = async (plantToUpdate: Plant) => {
         const originalPlants = plants;
         setPlants(currentPlants =>
-            currentPlants.map(p => (p.id === updatedPlant.id ? updatedPlant : p))
+            currentPlants.map(p => (p.id === plantToUpdate.id ? plantToUpdate : p))
         );
         try {
-            // await fetch(`/api/plants/${updatedPlant.id}`, { method: 'PUT', body: JSON.stringify(updatedPlant) });
+            await updatePlant(plantToUpdate.id, plantToUpdate, token);
         } catch (error) {
             console.error('Failed to update plant:', error);
-            setPlants(originalPlants); // Revert on failure
+            setPlants(originalPlants);
         }
     };
 
     // --- Journal Functions ---
-    const handleSaveJournalEntry = async (newEntryData: Omit<JournalEntry, 'id' | 'date'>) => {
+    const handleSaveJournalEntry = async (formData: FormData) => {
         try {
-            // const response = await fetch('/api/journal', { method: 'POST', body: JSON.stringify(newEntryData) });
-            // const newEntry = await response.json();
-             const newEntry: JournalEntry = { id: Date.now(), date: new Date().toISOString(), ...newEntryData };
+            const newEntry = await addJournalEntry(formData, token);
             setJournalEntries(prev => [newEntry, ...prev]);
         } catch (error) {
              console.error('Failed to save journal entry:', error);
@@ -921,7 +892,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         const originalEntries = journalEntries;
         setJournalEntries(prev => prev.filter(entry => entry.id !== id));
         try {
-            // await fetch(`/api/journal/${id}`, { method: 'DELETE' });
+            await deleteJournalEntry(id, token);
         } catch (error) {
             console.error('Failed to delete journal entry:', error);
             setJournalEntries(originalEntries);
@@ -1049,7 +1020,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                         )}
                     </div>
                 );
-            case 'AI Assistant': return <AiAssistant />;
+            case 'AI Assistant': return <AiAssistant token={token} />;
             case 'Journal': return <JournalTab entries={journalEntries} articles={articles} onNewEntry={() => setJournalModalOpen(true)} onViewEntry={(entry) => setViewingJournalEntry(entry)} onDeleteEntry={handleDeleteJournalEntry} onViewArticle={handleViewArticle} />;
             case 'Statistics': return <StatisticsTab plants={plants} />;
             default: return <div className="text-center text-plant-gray py-12 animate-fade-in">Content for {activeTab} is coming soon!</div>;
@@ -1072,6 +1043,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                             <PlusIcon className="h-5 w-5" />
                             <span>Add Plant</span>
                         </button>
+                        <button onClick={onLogout} className="font-semibold text-plant-gray-dark hover:text-plant-green">Logout</button>
                         <div className="relative">
                             <button className="h-10 w-10 bg-green-100 text-plant-green-dark font-bold rounded-full flex items-center justify-center">
                                 PP
@@ -1095,8 +1067,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 {renderActiveTabContent()}
                 
             </main>
-            <AddPlantModal isOpen={isAddPlantModalOpen} onClose={closeAddPlantModal} onAddPlant={handleAddPlant} />
-            <PlantDetailsModal isOpen={isViewModalOpen} onClose={() => setViewModalOpen(false)} plant={selectedPlant} onUpdatePlant={handleUpdatePlant} />
+            <AddPlantModal isOpen={isAddPlantModalOpen} onClose={closeAddPlantModal} onAddPlant={handleAddPlant} token={token} />
+            <PlantDetailsModal isOpen={isViewModalOpen} onClose={() => setViewModalOpen(false)} plant={selectedPlant} onUpdatePlant={handleUpdatePlant} token={token} />
             <ArticleModal isOpen={isArticleModalOpen} onClose={() => setArticleModalOpen(false)} article={selectedArticle} />
             <JournalEntryModal isOpen={isJournalModalOpen} onClose={() => setJournalModalOpen(false)} onSave={handleSaveJournalEntry} />
             <ViewJournalEntryModal isOpen={!!viewingJournalEntry} onClose={() => setViewingJournalEntry(null)} entry={viewingJournalEntry} />

@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LogoIcon, CloseIcon, UserIcon, EmailIcon, LockIcon, GoogleIcon, GithubIcon, TrialSparkleIcon } from '../constants';
+import { signIn, signUp } from '../lib/api';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode: 'signin' | 'signup';
-  onLoginSuccess: () => void;
+  onLoginSuccess: (token: string) => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onLoginSuccess }) => {
@@ -49,29 +50,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
-
     try {
-      // This is a placeholder for the actual API call.
-      // In a real application, you would use fetch() to send the data to your backend.
-      console.log(`Sending to ${endpoint}:`, data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-
-      // const response = await fetch(endpoint, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
-      // });
-
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || 'An error occurred.');
-      // }
+      let response;
+      if (mode === 'signup') {
+        response = await signUp({
+          fullname: data.fullname as string,
+          email: data.email as string,
+          password: data.password as string,
+        });
+      } else {
+        response = await signIn({
+          email: data.email as string,
+          password: data.password as string,
+        });
+      }
       
-      // const { token } = await response.json();
-      // onLoginSuccess(token); // Pass token to parent
-
-      onLoginSuccess(); // Simulate success for prototype
+      onLoginSuccess(response.token);
 
     } catch (err: any) {
       setError(err.message || 'Failed to authenticate. Please try again.');
@@ -172,7 +166,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <button onClick={onLoginSuccess} className="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-plant-gray-dark bg-white hover:bg-gray-50 transition-colors">
+          <button className="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-plant-gray-dark bg-white hover:bg-gray-50 transition-colors">
             <GoogleIcon className="h-5 w-5 mr-2" />
             Google
           </button>
