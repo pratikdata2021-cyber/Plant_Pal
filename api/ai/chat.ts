@@ -1,63 +1,60 @@
+import { GoogleGenAI } from "@google/genai";
 
 export const config = {
-  runtime: 'nodejs',
+  runtime: 'edge',
 };
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
 export default async function handler(req: Request) {
-  if (!OPENROUTER_API_KEY) {
-    return new Response(JSON.stringify({ error: 'OpenRouter API key is not configured. Please set the OPENROUTER_API_KEY environment variable in your Vercel project settings.' }), {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'API key is not configured. Please set the API_KEY environment variable.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  if (req.method === 'POST') {
-    try {
-      const { history } = await req.json();
+  try {
+    const { history } = await req.json();
 
-      if (!history) {
-        return new Response(JSON.stringify({ error: 'History is required' }), { status: 400 });
-      }
-
-      const messages = history.map((msg: { role: 'user' | 'model', text: string }) => ({
-        role: msg.role === 'model' ? 'assistant' : 'user',
-        content: msg.text,
-      }));
-
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://plantpal.vercel.app", 
-          "X-Title": "Plant Pal",
-        },
-        body: JSON.stringify({
-          "model": "google/gemini-2.0-flash-exp:free",
-          "messages": messages,
-        })
-      });
-
-      if (!res.ok) {
-        const errorBody = await res.text();
-        console.error(`OpenRouter API error: ${res.statusText}`, errorBody);
-        throw new Error(`OpenRouter API error: ${res.statusText}`);
-      }
-      
-      const data = await res.json();
-      const response = data.choices[0].message.content;
-      
-      return new Response(JSON.stringify({ response }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-    } catch (error: any) {
-      console.error(error);
-      return new Response(JSON.stringify({ error: 'Failed to fetch response from OpenRouter API', details: error.message }), { status: 500 });
+    if (!history) {
+      return new Response(JSON.stringify({ error: 'History is required' }), { status: 400 });
     }
+
+    // The last item in history is the new prompt
+    const latestUserMessage = history.pop();
+    if (!latestUserMessage || latestUserMessage.role !== 'user') {
+      return new Response(JSON.stringify({ error: 'Invalid prompt structure' }), { status: 400 });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    // Format history for the chat model
+    const chatHistory = history.map((msg: { role: 'user' | 'model', text: string }) => ({
+        role: msg.role,
+        parts: [{ text: msg.text }],
+    }));
+
+    const chat = ai.chats.create({
+      model: 'gemini-2.5-flash',
+      history: chatHistory,
+    });
+    
+    const result = await chat.sendMessage({ message: latestUserMessage.text });
+
+    return new Response(JSON.stringify({ response: result.text }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (error: any) {
+    console.error("Error with Google GenAI:", error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch response from Google GenAI', details: error.message }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+    });
   }
-  return new Response('Method Not Allowed', { status: 405 });
 }
