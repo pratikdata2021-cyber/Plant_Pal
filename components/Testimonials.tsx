@@ -34,19 +34,19 @@ const Testimonials: React.FC = () => {
       quote: "Plant Pal transformed my black thumb into a green one! I have not lost a single plant since I started using it.",
       name: "Sarah Johnson",
       title: "Urban Gardener",
-      avatar: "https://picsum.photos/id/64/100/100"
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80"
     },
     {
       quote: "The AI assistant is incredibly helpful. It is like having a botanist in my pocket 24/7!",
       name: "Michael Chen",
       title: "Plant Enthusiast",
-      avatar: "https://picsum.photos/id/65/100/100"
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&q=80"
     },
     {
       quote: "Perfect for managing client plants! The journal feature helps me track progress for every project.",
       name: "Emily Rodriguez",
       title: "Interior Designer",
-      avatar: "https://picsum.photos/id/66/100/100"
+      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&q=80"
     }
   ];
 

@@ -7,7 +7,7 @@ const ExpertRecs: React.FC = () => {
     <section className="py-20">
       <div className="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
         <div className="relative order-2 md:order-1">
-          <img src="https://picsum.photos/id/152/600/500" alt="Person tending to a plant" className="rounded-3xl shadow-2xl transition-transform duration-300 ease-in-out hover:scale-105" />
+          <img src="https://images.unsplash.com/photo-1525498128493-380d1990a112?w=600&h=500&fit=crop&q=80" alt="Person tending to a plant" className="rounded-3xl shadow-2xl transition-transform duration-300 ease-in-out hover:scale-105" />
           <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-2xl shadow-xl flex items-center space-x-3">
             <div className="bg-yellow-100 text-yellow-500 p-3 rounded-full">
               <SunIcon className="h-6 w-6" />

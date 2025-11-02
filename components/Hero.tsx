@@ -41,7 +41,7 @@ const Hero: React.FC<HeroProps> = ({ onSignUpClick }) => {
         </div>
         <div className="relative flex justify-center">
           <div className="relative">
-            <img src="https://picsum.photos/id/106/500/600" alt="Lush green plant" className="rounded-3xl shadow-2xl object-cover w-full max-w-md transition-transform duration-300 ease-in-out hover:scale-105" />
+            <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=500&h=600&fit=crop&q=80" alt="Lush green plant" className="rounded-3xl shadow-2xl object-cover w-full max-w-md transition-transform duration-300 ease-in-out hover:scale-105" />
             <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl animate-pulse">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (

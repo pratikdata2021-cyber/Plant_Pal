@@ -32,7 +32,7 @@ const PlantId: React.FC = () => {
           </button>
         </div>
         <div className="relative">
-          <img src="https://picsum.photos/id/206/600/500" alt="People using phones" className="rounded-3xl shadow-2xl transition-transform duration-300 ease-in-out hover:scale-105" />
+          <img src="https://images.unsplash.com/photo-1619595944835-9d3e5a5b5a93?w=600&h=500&fit=crop&q=80" alt="Phone identifying a plant" className="rounded-3xl shadow-2xl transition-transform duration-300 ease-in-out hover:scale-105" />
           <div className="absolute -top-6 -left-6 bg-white p-4 rounded-2xl shadow-xl flex items-center space-x-3">
             <div className="bg-blue-100 text-blue-500 p-3 rounded-full">
               <CloudIcon className="h-6 w-6" />

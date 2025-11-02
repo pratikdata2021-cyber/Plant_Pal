@@ -46,29 +46,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
+    
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullname = formData.get('fullname') as string;
 
     try {
-      let response;
       if (mode === 'signup') {
-        response = await signUp({
-          fullname: data.fullname as string,
-          email: data.email as string,
-          password: data.password as string,
-        });
+        const { token } = await signUp({ fullname, email, password });
+        onLoginSuccess(token);
       } else {
-        response = await signIn({
-          email: data.email as string,
-          password: data.password as string,
-        });
+        const { token } = await signIn({ email, password });
+        onLoginSuccess(token);
       }
-      
-      onLoginSuccess(response.token);
-
     } catch (err: any) {
-      setError(err.message || 'Failed to authenticate. Please try again.');
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +110,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <UserIcon className="h-5 w-5 text-gray-400" />
                 </span>
-                <input type="text" id="fullname" name="fullname" required className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Enter your name"/>
+                <input type="text" id="fullname" name="fullname" className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Enter your name"/>
               </div>
             </div>
           )}
@@ -128,7 +121,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <EmailIcon className="h-5 w-5 text-gray-400" />
               </span>
-              <input type="email" id="email" name="email" required className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Enter your email"/>
+              <input type="email" id="email" name="email" className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Enter your email"/>
             </div>
           </div>
 
@@ -138,7 +131,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode, onL
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <LockIcon className="h-5 w-5 text-gray-400" />
               </span>
-              <input type="password" id="password" name="password" required className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Create a password"/>
+              <input type="password" id="password" name="password" className="w-full pl-10 pr-4 py-2 bg-plant-gray-light border border-transparent rounded-lg focus:ring-2 focus:ring-plant-green focus:border-transparent outline-none transition" placeholder="Create a password"/>
             </div>
           </div>
           

@@ -22,6 +22,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
       location: '',
       wateringFrequency: 7,
       fertilizingFrequency: 30,
+      groomingFrequency: 60,
       sunlight: 'Medium Light',
       humidity: 'Medium Humidity',
       notes: ''
@@ -50,6 +51,7 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
             location: '',
             wateringFrequency: 7,
             fertilizingFrequency: 30,
+            groomingFrequency: 60,
             sunlight: 'Medium Light',
             humidity: 'Medium Humidity',
             notes: ''
@@ -246,14 +248,18 @@ const AddPlantModal: React.FC<AddPlantModalProps> = ({ isOpen, onClose, onAddPla
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  <div>
-                    <label htmlFor="wateringFrequency" className={labelClasses}>Watering Frequency (days) *</label>
+                    <label htmlFor="wateringFrequency" className={labelClasses}>Watering (days) *</label>
                     <input type="number" id="wateringFrequency" name="wateringFrequency" value={plantData.wateringFrequency} onChange={handleChange} required className={inputClasses}/>
                 </div>
                  <div>
-                    <label htmlFor="fertilizingFrequency" className={labelClasses}>Fertilizing Frequency (days)</label>
+                    <label htmlFor="fertilizingFrequency" className={labelClasses}>Fertilizing (days)</label>
                     <input type="number" id="fertilizingFrequency" name="fertilizingFrequency" value={plantData.fertilizingFrequency} onChange={handleChange} className={inputClasses}/>
+                </div>
+                <div>
+                    <label htmlFor="groomingFrequency" className={labelClasses}>Grooming (days)</label>
+                    <input type="number" id="groomingFrequency" name="groomingFrequency" value={plantData.groomingFrequency} onChange={handleChange} className={inputClasses}/>
                 </div>
             </div>
 

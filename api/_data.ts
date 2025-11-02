@@ -1,5 +1,14 @@
-
 import { Plant, JournalEntry, Article } from "../components/Dashboard";
+
+// Mock user database for client-side authentication
+export const users = [
+    {
+        id: 1,
+        fullname: 'Pratik Patil',
+        email: 'pratik@example.com',
+        password: 'password123'
+    }
+];
 
 // Using a let binding so the arrays can be mutated by the API functions
 export let mockPlants: Plant[] = [
@@ -7,7 +16,7 @@ export let mockPlants: Plant[] = [
         id: 1,
         name: 'Monstera Deliciosa',
         scientificName: 'Monstera deliciosa',
-        image: 'https://picsum.photos/id/106/500/600',
+        image: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=500&h=600&fit=crop&q=80',
         light: 'Medium',
         health: 'healthy',
         location: 'Living Room',
@@ -26,7 +35,7 @@ export let mockPlants: Plant[] = [
         id: 2,
         name: 'Snake Plant',
         scientificName: 'Dracaena trifasciata',
-        image: 'https://picsum.photos/id/152/500/600',
+        image: 'https://images.unsplash.com/photo-1587393437289-e15251d1f11c?w=500&h=600&fit=crop&q=80',
         light: 'Low',
         health: 'healthy',
         location: 'Bedroom',
@@ -44,7 +53,7 @@ export let mockPlants: Plant[] = [
         id: 3,
         name: 'Fiddle Leaf Fig',
         scientificName: 'Ficus lyrata',
-        image: 'https://picsum.photos/id/206/500/600',
+        image: 'https://images.unsplash.com/photo-1582025702992-3a59535a034b?w=500&h=600&fit=crop&q=80',
         light: 'Bright',
         health: 'attention',
         location: 'Office',
@@ -75,7 +84,7 @@ export let mockJournalEntries: JournalEntry[] = [
         file: {
             name: "orchid_bloom.jpg",
             type: "image",
-            url: "https://picsum.photos/id/1027/400/300"
+            url: "https://images.unsplash.com/photo-1552727821-2a6210a55986?w=400&h=300&fit=crop&q=80"
         }
     }
 ];
@@ -87,7 +96,7 @@ export let mockArticles: Article[] = [
         category: "Watering",
         type: "Guide",
         description: "Learn the do's and don'ts of watering to keep your plants perfectly hydrated.",
-        image: "https://picsum.photos/id/1015/400/300",
+        image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&h=300&fit=crop&q=80",
         link: "#",
         content: "**Watering is crucial, but overwatering is the #1 killer of houseplants.**\n\nMost people think more water is better, but plant roots need oxygen too. When soil is constantly soggy, roots can't breathe and they begin to rot.\n\nThe best rule of thumb is to check the soil. Stick your finger about an inch or two into the soil. If it feels dry, it's time to water. If it's still moist, wait a few more days."
     },
@@ -97,7 +106,7 @@ export let mockArticles: Article[] = [
         category: "Sunlight",
         type: "Article",
         description: "From low light to full sun, find the perfect spot for every plant in your home.",
-        image: "https://picsum.photos/id/103/400/300",
+        image: "https://images.unsplash.com/photo-1509423350610-add4a93d00df?w=400&h=300&fit=crop&q=80",
         link: "#",
         content: "**Sunlight is food for your plants.**\n\nIt's the energy source for photosynthesis. But not all light is created equal.\n\n*   **Bright, direct light:** At least 4-6 hours of direct sun. Great for cacti and succulents.\n*   **Bright, indirect light:** A bright spot where the sun's rays don't directly hit the leaves. Most tropical houseplants love this.\n*   **Medium light:** A spot that gets indirect light for part of the day, but is further from a window.\n*   **Low light:** A room with no direct sun, like a north-facing window. Best for plants like the Snake Plant or ZZ Plant."
     },
@@ -107,7 +116,7 @@ export let mockArticles: Article[] = [
         category: "Repotting",
         type: "Guide",
         description: "Give your plants room to grow with this simple, step-by-step repotting guide.",
-        image: "https://picsum.photos/id/1068/400/300",
+        image: "https://images.unsplash.com/photo-1583758368308-a728a7e03498?w=400&h=300&fit=crop&q=80",
         link: "#",
         content: "**Don't be afraid to repot!**\n\nIt seems intimidating, but it's essential for a plant's long-term health. \n\n**When to Repot:**\n\n*   Roots are growing out of the drainage holes.\n*   The plant is top-heavy and falls over easily.\n*   Water runs straight through the pot without being absorbed.\n\nChoose a pot that is only 1-2 inches larger in diameter than the current one."
     }
